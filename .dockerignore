@@ -1,0 +1,40 @@
+# Ignore unnecessary files for Docker build
+.git
+.gitignore
+README.md
+Dockerfile
+.dockerignore
+
+# Ignore test files and scripts
+test.sh
+*_test.go
+testdata/
+
+# Ignore build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+server/server
+client/client
+
+# Ignore IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore temporary files
+*.tmp
+*.temp
+*.log
+
+# Ignore documentation
+docs/
+*.md

@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package grpc.goodbye;
+
+option go_package = "grpc-sample/proto/goodbye";
+
+// The goodbye service definition.
+service Farewell {
+  // Sends a goodbye message
+  rpc SayGoodbye (GoodbyeRequest) returns (GoodbyeReply) {}
+  
+  // Sends multiple goodbye messages in a stream
+  rpc SayGoodbyeStream (GoodbyeRequest) returns (stream GoodbyeReply) {}
+  
+  // Client sends multiple names, server responds with farewell summary
+  rpc SayGoodbyeClientStream (stream GoodbyeRequest) returns (GoodbyeReply) {}
+  
+  // Bidirectional streaming - client sends names, server responds to each
+  rpc SayGoodbyeBidirectional (stream GoodbyeRequest) returns (stream GoodbyeReply) {}
+}
+
+// The request message containing the user's name.
+message GoodbyeRequest {
+  string name = 1;
+}
+
+// The response message containing the goodbye message.
+message GoodbyeReply {
+  string message = 1;
+}

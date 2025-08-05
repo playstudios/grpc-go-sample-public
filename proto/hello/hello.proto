@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package grpc.hello;
+
+option go_package = "grpc-sample/proto/hello";
+
+// The greeting service definition
+service Greeter {
+  // Sends a greeting
+  rpc SayHello (HelloRequest) returns (HelloReply) {}
+  
+  // Sends multiple greetings
+  rpc SayHelloStream (HelloRequest) returns (stream HelloReply) {}
+  
+  // Client sends multiple names, server responds with summary
+  rpc SayHelloClientStream (stream HelloRequest) returns (HelloReply) {}
+  
+  // Bidirectional streaming - client sends names, server responds to each
+  rpc SayHelloBidirectional (stream HelloRequest) returns (stream HelloReply) {}
+}
+
+// The request message containing the user's name
+message HelloRequest {
+  string name = 1;
+}
+
+// The response message containing the greetings
+message HelloReply {
+  string message = 1;
+}
