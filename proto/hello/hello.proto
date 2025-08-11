@@ -17,6 +17,12 @@ service Greeter {
   
   // Bidirectional streaming - client sends names, server responds to each
   rpc SayHelloBidirectional (stream HelloRequest) returns (stream HelloReply) {}
+  
+  // Demonstrates input validation errors with comprehensive error scenarios
+  rpc SayHelloWithValidation (HelloRequest) returns (HelloReply) {}
+  
+  // Demonstrates authentication/authorization errors
+  rpc SayHelloWithAuth (HelloRequest) returns (HelloReply) {}
 }
 
 // The request message containing the user's name

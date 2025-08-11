@@ -19,10 +19,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Farewell_SayGoodbye_FullMethodName              = "/grpc.goodbye.Farewell/SayGoodbye"
-	Farewell_SayGoodbyeStream_FullMethodName        = "/grpc.goodbye.Farewell/SayGoodbyeStream"
-	Farewell_SayGoodbyeClientStream_FullMethodName  = "/grpc.goodbye.Farewell/SayGoodbyeClientStream"
-	Farewell_SayGoodbyeBidirectional_FullMethodName = "/grpc.goodbye.Farewell/SayGoodbyeBidirectional"
+	Farewell_SayGoodbye_FullMethodName               = "/grpc.goodbye.Farewell/SayGoodbye"
+	Farewell_SayGoodbyeStream_FullMethodName         = "/grpc.goodbye.Farewell/SayGoodbyeStream"
+	Farewell_SayGoodbyeClientStream_FullMethodName   = "/grpc.goodbye.Farewell/SayGoodbyeClientStream"
+	Farewell_SayGoodbyeBidirectional_FullMethodName  = "/grpc.goodbye.Farewell/SayGoodbyeBidirectional"
+	Farewell_SayGoodbyeWithValidation_FullMethodName = "/grpc.goodbye.Farewell/SayGoodbyeWithValidation"
+	Farewell_SayGoodbyeWithAuth_FullMethodName       = "/grpc.goodbye.Farewell/SayGoodbyeWithAuth"
 )
 
 // FarewellClient is the client API for Farewell service.
@@ -39,6 +41,10 @@ type FarewellClient interface {
 	SayGoodbyeClientStream(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[GoodbyeRequest, GoodbyeReply], error)
 	// Bidirectional streaming - client sends names, server responds to each
 	SayGoodbyeBidirectional(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[GoodbyeRequest, GoodbyeReply], error)
+	// Demonstrates input validation errors with comprehensive error scenarios
+	SayGoodbyeWithValidation(ctx context.Context, in *GoodbyeRequest, opts ...grpc.CallOption) (*GoodbyeReply, error)
+	// Demonstrates authentication/authorization errors
+	SayGoodbyeWithAuth(ctx context.Context, in *GoodbyeRequest, opts ...grpc.CallOption) (*GoodbyeReply, error)
 }
 
 type farewellClient struct {
@@ -104,6 +110,26 @@ func (c *farewellClient) SayGoodbyeBidirectional(ctx context.Context, opts ...gr
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Farewell_SayGoodbyeBidirectionalClient = grpc.BidiStreamingClient[GoodbyeRequest, GoodbyeReply]
 
+func (c *farewellClient) SayGoodbyeWithValidation(ctx context.Context, in *GoodbyeRequest, opts ...grpc.CallOption) (*GoodbyeReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GoodbyeReply)
+	err := c.cc.Invoke(ctx, Farewell_SayGoodbyeWithValidation_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *farewellClient) SayGoodbyeWithAuth(ctx context.Context, in *GoodbyeRequest, opts ...grpc.CallOption) (*GoodbyeReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GoodbyeReply)
+	err := c.cc.Invoke(ctx, Farewell_SayGoodbyeWithAuth_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FarewellServer is the server API for Farewell service.
 // All implementations must embed UnimplementedFarewellServer
 // for forward compatibility.
@@ -118,6 +144,10 @@ type FarewellServer interface {
 	SayGoodbyeClientStream(grpc.ClientStreamingServer[GoodbyeRequest, GoodbyeReply]) error
 	// Bidirectional streaming - client sends names, server responds to each
 	SayGoodbyeBidirectional(grpc.BidiStreamingServer[GoodbyeRequest, GoodbyeReply]) error
+	// Demonstrates input validation errors with comprehensive error scenarios
+	SayGoodbyeWithValidation(context.Context, *GoodbyeRequest) (*GoodbyeReply, error)
+	// Demonstrates authentication/authorization errors
+	SayGoodbyeWithAuth(context.Context, *GoodbyeRequest) (*GoodbyeReply, error)
 	mustEmbedUnimplementedFarewellServer()
 }
 
@@ -139,6 +169,12 @@ func (UnimplementedFarewellServer) SayGoodbyeClientStream(grpc.ClientStreamingSe
 }
 func (UnimplementedFarewellServer) SayGoodbyeBidirectional(grpc.BidiStreamingServer[GoodbyeRequest, GoodbyeReply]) error {
 	return status.Errorf(codes.Unimplemented, "method SayGoodbyeBidirectional not implemented")
+}
+func (UnimplementedFarewellServer) SayGoodbyeWithValidation(context.Context, *GoodbyeRequest) (*GoodbyeReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SayGoodbyeWithValidation not implemented")
+}
+func (UnimplementedFarewellServer) SayGoodbyeWithAuth(context.Context, *GoodbyeRequest) (*GoodbyeReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SayGoodbyeWithAuth not implemented")
 }
 func (UnimplementedFarewellServer) mustEmbedUnimplementedFarewellServer() {}
 func (UnimplementedFarewellServer) testEmbeddedByValue()                  {}
@@ -204,6 +240,42 @@ func _Farewell_SayGoodbyeBidirectional_Handler(srv interface{}, stream grpc.Serv
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Farewell_SayGoodbyeBidirectionalServer = grpc.BidiStreamingServer[GoodbyeRequest, GoodbyeReply]
 
+func _Farewell_SayGoodbyeWithValidation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GoodbyeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FarewellServer).SayGoodbyeWithValidation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Farewell_SayGoodbyeWithValidation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FarewellServer).SayGoodbyeWithValidation(ctx, req.(*GoodbyeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Farewell_SayGoodbyeWithAuth_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GoodbyeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FarewellServer).SayGoodbyeWithAuth(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Farewell_SayGoodbyeWithAuth_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FarewellServer).SayGoodbyeWithAuth(ctx, req.(*GoodbyeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Farewell_ServiceDesc is the grpc.ServiceDesc for Farewell service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -214,6 +286,14 @@ var Farewell_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SayGoodbye",
 			Handler:    _Farewell_SayGoodbye_Handler,
+		},
+		{
+			MethodName: "SayGoodbyeWithValidation",
+			Handler:    _Farewell_SayGoodbyeWithValidation_Handler,
+		},
+		{
+			MethodName: "SayGoodbyeWithAuth",
+			Handler:    _Farewell_SayGoodbyeWithAuth_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

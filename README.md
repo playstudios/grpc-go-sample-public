@@ -394,6 +394,119 @@ time for i in {1..10}; do
 done
 ```
 
+## Error Handling
+
+The server includes comprehensive error handling that demonstrates various gRPC status codes:
+
+### Error Triggers
+
+You can trigger different types of errors by using specific input values:
+
+- **Empty string** (`""`) → `INVALID_ARGUMENT` - "Name cannot be empty"
+- **"unknown"** → `NOT_FOUND` - "User not found in system"
+- **"admin"** → `PERMISSION_DENIED` - "Access denied for admin operations"
+- **"root"** → `PERMISSION_DENIED` - "Root access not allowed"
+- **"guest"** → `UNAUTHENTICATED` - "Authentication required"
+- **"overload"** → `RESOURCE_EXHAUSTED` - "Server overloaded, try again later"
+- **"busy"** → `RESOURCE_EXHAUSTED` - "Too many concurrent requests"
+- **"error"** → `INTERNAL` - "Internal server error occurred"
+- **"crash"** → `INTERNAL` - "Unexpected system failure"
+- **"down"** → `UNAVAILABLE` - "Service temporarily unavailable"
+- **"offline"** → `UNAVAILABLE` - "Service is offline for maintenance"
+- **"timeout"** → `DEADLINE_EXCEEDED` - "Request processing timeout"
+- **"slow"** → `DEADLINE_EXCEEDED` - "Operation took too long"
+- **"cancelled"** → `CANCELLED` - "Operation was cancelled"
+- **"abort"** → `ABORTED` - "Operation aborted due to conflict"
+- **"exists"** → `ALREADY_EXISTS` - "Resource already exists"
+- **"range"** → `OUT_OF_RANGE` - "Value out of acceptable range"
+- **"unimplemented"** → `UNIMPLEMENTED` - "Feature not implemented"
+- **"data"** → `DATA_LOSS` - "Data corruption detected"
+
+### Error Methods
+
+The server provides dedicated error handling methods:
+
+#### Hello Service (Greeter)
+- `SayHelloWithValidation` - Comprehensive input validation errors
+- `SayHelloWithAuth` - Authentication/authorization errors
+
+#### Goodbye Service (Farewell)
+- `SayGoodbyeWithValidation` - Comprehensive input validation errors
+- `SayGoodbyeWithAuth` - Authentication/authorization errors
+
+### HTTP Error Endpoints
+
+New HTTP endpoints for testing error scenarios:
+- **GET/POST /api/hello/validate** - Test validation errors
+- **GET/POST /api/hello/auth** - Test authentication errors
+- **GET/POST /api/goodbye/validate** - Test validation errors
+- **GET/POST /api/goodbye/auth** - Test authentication errors
+
+### HTTP Error Mapping
+
+gRPC errors are automatically mapped to appropriate HTTP status codes:
+
+- `INVALID_ARGUMENT` → HTTP 400 Bad Request
+- `NOT_FOUND` → HTTP 404 Not Found
+- `PERMISSION_DENIED` → HTTP 403 Forbidden
+- `UNAUTHENTICATED` → HTTP 401 Unauthorized
+- `RESOURCE_EXHAUSTED` → HTTP 429 Too Many Requests
+- `INTERNAL` → HTTP 500 Internal Server Error
+- `UNAVAILABLE` → HTTP 503 Service Unavailable
+- `DEADLINE_EXCEEDED` → HTTP 408 Request Timeout
+- `CANCELLED` → HTTP 499 Client Closed Request
+- `ABORTED` → HTTP 409 Conflict
+- `ALREADY_EXISTS` → HTTP 409 Conflict
+- `OUT_OF_RANGE` → HTTP 400 Bad Request
+- `UNIMPLEMENTED` → HTTP 501 Not Implemented
+- `DATA_LOSS` → HTTP 500 Internal Server Error
+
+### HTTP Error Response Format
+
+```json
+{
+  "error": {
+    "code": "INVALID_ARGUMENT",
+    "message": "Name cannot be empty",
+    "details": {
+      "grpc_status": "INVALID_ARGUMENT"
+    },
+    "grpc_code": 3,
+    "timestamp": "2024-01-01T12:00:00Z"
+  }
+}
+```
+
+### Testing Error Scenarios
+
+#### gRPC Error Testing
+```bash
+# Test validation errors
+grpcurl -plaintext -d '{"name":""}' localhost:50051 grpc.hello.Greeter/SayHelloWithValidation
+grpcurl -plaintext -d '{"name":"unknown"}' localhost:50051 grpc.hello.Greeter/SayHelloWithValidation
+grpcurl -plaintext -d '{"name":"admin"}' localhost:50051 grpc.hello.Greeter/SayHelloWithValidation
+
+# Test auth errors
+grpcurl -plaintext -d '{"name":"guest"}' localhost:50051 grpc.hello.Greeter/SayHelloWithAuth
+grpcurl -plaintext -d '{"name":"banned"}' localhost:50051 grpc.hello.Greeter/SayHelloWithAuth
+```
+
+#### HTTP Error Testing
+```bash
+# Test validation errors via HTTP
+curl 'http://localhost:50051/api/hello/validate?name='
+curl 'http://localhost:50051/api/hello/validate?name=unknown'
+curl 'http://localhost:50051/api/hello/validate?name=admin'
+
+# Test auth errors via HTTP
+curl 'http://localhost:50051/api/hello/auth?name=guest'
+curl 'http://localhost:50051/api/hello/auth?name=banned'
+
+# Test with POST requests
+curl -X POST -H 'Content-Type: application/json' -d '{"name":"error"}' http://localhost:50051/api/hello/validate
+curl -X POST -H 'Content-Type: application/json' -d '{"name":"timeout"}' http://localhost:50051/api/goodbye/validate
+```
+
 ## Architecture Highlights
 
 ### Separate Services
@@ -436,4 +549,3 @@ This sample showcases all four gRPC streaming patterns:
 - **Pattern**: Multiple requests ↔ Multiple responses
 - **Examples**: `SayHelloBidirectional`, `SayGoodbyeBidirectional`
 - **Use Cases**: Chat applications, real-time collaboration, live data processing
-

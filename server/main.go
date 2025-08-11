@@ -19,8 +19,10 @@ import (
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/status"
 )
 
 // helloServer is used to implement hello.GreeterServer.
@@ -79,6 +81,204 @@ func (s *helloServer) SayHello(ctx context.Context, in *hello.HelloRequest) (*he
 	grpc.SetTrailer(ctx, trailer)
 
 	return &hello.HelloReply{Message: "Hello " + in.GetName()}, nil
+}
+
+// SayHelloWithValidation demonstrates comprehensive input validation errors
+func (s *helloServer) SayHelloWithValidation(ctx context.Context, in *hello.HelloRequest) (*hello.HelloReply, error) {
+	log.Printf("gRPC: Received SayHelloWithValidation request: %v", in.GetName())
+
+	name := strings.TrimSpace(in.GetName())
+
+	// Comprehensive error scenarios based on input
+	switch name {
+	case "":
+		grpc.SetTrailer(ctx, metadata.Pairs(
+			"error-code", "VALIDATION_FAILED",
+			"error-field", "name",
+			"error-timestamp", time.Now().Format(time.RFC3339),
+		))
+		return nil, status.Error(codes.InvalidArgument, "Name cannot be empty")
+
+	case "unknown":
+		grpc.SetTrailer(ctx, metadata.Pairs(
+			"error-code", "USER_NOT_FOUND",
+			"error-field", "name",
+			"error-timestamp", time.Now().Format(time.RFC3339),
+		))
+		return nil, status.Error(codes.NotFound, "User not found in system")
+
+	case "admin":
+		grpc.SetTrailer(ctx, metadata.Pairs(
+			"error-code", "ACCESS_DENIED",
+			"error-field", "name",
+			"error-timestamp", time.Now().Format(time.RFC3339),
+		))
+		return nil, status.Error(codes.PermissionDenied, "Access denied for admin operations")
+
+	case "root":
+		grpc.SetTrailer(ctx, metadata.Pairs(
+			"error-code", "ROOT_ACCESS_DENIED",
+			"error-field", "name",
+			"error-timestamp", time.Now().Format(time.RFC3339),
+		))
+		return nil, status.Error(codes.PermissionDenied, "Root access not allowed")
+
+	case "guest":
+		grpc.SetTrailer(ctx, metadata.Pairs(
+			"error-code", "AUTH_REQUIRED",
+			"error-field", "name",
+			"error-timestamp", time.Now().Format(time.RFC3339),
+		))
+		return nil, status.Error(codes.Unauthenticated, "Authentication required")
+
+	case "overload":
+		grpc.SetTrailer(ctx, metadata.Pairs(
+			"error-code", "SERVER_OVERLOADED",
+			"error-field", "name",
+			"error-timestamp", time.Now().Format(time.RFC3339),
+		))
+		return nil, status.Error(codes.ResourceExhausted, "Server overloaded, try again later")
+
+	case "busy":
+		grpc.SetTrailer(ctx, metadata.Pairs(
+			"error-code", "TOO_MANY_REQUESTS",
+			"error-field", "name",
+			"error-timestamp", time.Now().Format(time.RFC3339),
+		))
+		return nil, status.Error(codes.ResourceExhausted, "Too many concurrent requests")
+
+	case "error":
+		grpc.SetTrailer(ctx, metadata.Pairs(
+			"error-code", "INTERNAL_ERROR",
+			"error-field", "name",
+			"error-timestamp", time.Now().Format(time.RFC3339),
+		))
+		return nil, status.Error(codes.Internal, "Internal server error occurred")
+
+	case "crash":
+		grpc.SetTrailer(ctx, metadata.Pairs(
+			"error-code", "SYSTEM_FAILURE",
+			"error-field", "name",
+			"error-timestamp", time.Now().Format(time.RFC3339),
+		))
+		return nil, status.Error(codes.Internal, "Unexpected system failure")
+
+	case "down":
+		grpc.SetTrailer(ctx, metadata.Pairs(
+			"error-code", "SERVICE_UNAVAILABLE",
+			"error-field", "name",
+			"error-timestamp", time.Now().Format(time.RFC3339),
+		))
+		return nil, status.Error(codes.Unavailable, "Service temporarily unavailable")
+
+	case "offline":
+		grpc.SetTrailer(ctx, metadata.Pairs(
+			"error-code", "MAINTENANCE_MODE",
+			"error-field", "name",
+			"error-timestamp", time.Now().Format(time.RFC3339),
+		))
+		return nil, status.Error(codes.Unavailable, "Service is offline for maintenance")
+
+	case "timeout":
+		grpc.SetTrailer(ctx, metadata.Pairs(
+			"error-code", "PROCESSING_TIMEOUT",
+			"error-field", "name",
+			"error-timestamp", time.Now().Format(time.RFC3339),
+		))
+		return nil, status.Error(codes.DeadlineExceeded, "Request processing timeout")
+
+	case "slow":
+		grpc.SetTrailer(ctx, metadata.Pairs(
+			"error-code", "OPERATION_TIMEOUT",
+			"error-field", "name",
+			"error-timestamp", time.Now().Format(time.RFC3339),
+		))
+		return nil, status.Error(codes.DeadlineExceeded, "Operation took too long")
+
+	case "cancelled":
+		grpc.SetTrailer(ctx, metadata.Pairs(
+			"error-code", "OPERATION_CANCELLED",
+			"error-field", "name",
+			"error-timestamp", time.Now().Format(time.RFC3339),
+		))
+		return nil, status.Error(codes.Canceled, "Operation was cancelled")
+
+	case "abort":
+		grpc.SetTrailer(ctx, metadata.Pairs(
+			"error-code", "OPERATION_ABORTED",
+			"error-field", "name",
+			"error-timestamp", time.Now().Format(time.RFC3339),
+		))
+		return nil, status.Error(codes.Aborted, "Operation aborted due to conflict")
+
+	case "exists":
+		grpc.SetTrailer(ctx, metadata.Pairs(
+			"error-code", "RESOURCE_EXISTS",
+			"error-field", "name",
+			"error-timestamp", time.Now().Format(time.RFC3339),
+		))
+		return nil, status.Error(codes.AlreadyExists, "Resource already exists")
+
+	case "range":
+		grpc.SetTrailer(ctx, metadata.Pairs(
+			"error-code", "VALUE_OUT_OF_RANGE",
+			"error-field", "name",
+			"error-timestamp", time.Now().Format(time.RFC3339),
+		))
+		return nil, status.Error(codes.OutOfRange, "Value out of acceptable range")
+
+	case "unimplemented":
+		grpc.SetTrailer(ctx, metadata.Pairs(
+			"error-code", "FEATURE_NOT_IMPLEMENTED",
+			"error-field", "name",
+			"error-timestamp", time.Now().Format(time.RFC3339),
+		))
+		return nil, status.Error(codes.Unimplemented, "Feature not implemented")
+
+	case "data":
+		grpc.SetTrailer(ctx, metadata.Pairs(
+			"error-code", "DATA_CORRUPTION",
+			"error-field", "name",
+			"error-timestamp", time.Now().Format(time.RFC3339),
+		))
+		return nil, status.Error(codes.DataLoss, "Data corruption detected")
+	}
+
+	// Success case
+	grpc.SetTrailer(ctx, metadata.Pairs(
+		"validation-status", "passed",
+		"processed-name", name,
+		"timestamp", time.Now().Format(time.RFC3339),
+	))
+
+	return &hello.HelloReply{Message: fmt.Sprintf("Hello %s! Validation passed.", name)}, nil
+}
+
+// SayHelloWithAuth demonstrates authentication/authorization errors
+func (s *helloServer) SayHelloWithAuth(ctx context.Context, in *hello.HelloRequest) (*hello.HelloReply, error) {
+	log.Printf("gRPC: Received SayHelloWithAuth request: %v", in.GetName())
+
+	name := strings.TrimSpace(in.GetName())
+
+	// Auth-specific error scenarios
+	switch name {
+	case "":
+		return nil, status.Error(codes.InvalidArgument, "Username cannot be empty")
+	case "guest":
+		return nil, status.Error(codes.Unauthenticated, "Guest access requires authentication")
+	case "admin":
+		return nil, status.Error(codes.PermissionDenied, "Admin access denied")
+	case "root":
+		return nil, status.Error(codes.PermissionDenied, "Root access forbidden")
+	case "banned":
+		return nil, status.Error(codes.PermissionDenied, "User account is banned")
+	case "expired":
+		return nil, status.Error(codes.Unauthenticated, "Authentication token expired")
+	case "invalid":
+		return nil, status.Error(codes.Unauthenticated, "Invalid credentials")
+	}
+
+	return &hello.HelloReply{Message: fmt.Sprintf("Hello %s! Authentication successful.", name)}, nil
 }
 
 // SayHelloStream implements hello.GreeterServer
@@ -271,6 +471,204 @@ func (s *goodbyeServer) SayGoodbye(ctx context.Context, in *goodbye.GoodbyeReque
 	grpc.SetTrailer(ctx, trailer)
 
 	return &goodbye.GoodbyeReply{Message: "Goodbye " + in.GetName() + "! See you later!"}, nil
+}
+
+// SayGoodbyeWithValidation demonstrates comprehensive input validation errors
+func (s *goodbyeServer) SayGoodbyeWithValidation(ctx context.Context, in *goodbye.GoodbyeRequest) (*goodbye.GoodbyeReply, error) {
+	log.Printf("gRPC: Received SayGoodbyeWithValidation request: %v", in.GetName())
+
+	name := strings.TrimSpace(in.GetName())
+
+	// Comprehensive error scenarios based on input
+	switch name {
+	case "":
+		grpc.SetTrailer(ctx, metadata.Pairs(
+			"error-code", "VALIDATION_FAILED",
+			"error-field", "name",
+			"error-timestamp", time.Now().Format(time.RFC3339),
+		))
+		return nil, status.Error(codes.InvalidArgument, "Name cannot be empty")
+
+	case "unknown":
+		grpc.SetTrailer(ctx, metadata.Pairs(
+			"error-code", "USER_NOT_FOUND",
+			"error-field", "name",
+			"error-timestamp", time.Now().Format(time.RFC3339),
+		))
+		return nil, status.Error(codes.NotFound, "User not found in system")
+
+	case "admin":
+		grpc.SetTrailer(ctx, metadata.Pairs(
+			"error-code", "ACCESS_DENIED",
+			"error-field", "name",
+			"error-timestamp", time.Now().Format(time.RFC3339),
+		))
+		return nil, status.Error(codes.PermissionDenied, "Access denied for admin operations")
+
+	case "root":
+		grpc.SetTrailer(ctx, metadata.Pairs(
+			"error-code", "ROOT_ACCESS_DENIED",
+			"error-field", "name",
+			"error-timestamp", time.Now().Format(time.RFC3339),
+		))
+		return nil, status.Error(codes.PermissionDenied, "Root access not allowed")
+
+	case "guest":
+		grpc.SetTrailer(ctx, metadata.Pairs(
+			"error-code", "AUTH_REQUIRED",
+			"error-field", "name",
+			"error-timestamp", time.Now().Format(time.RFC3339),
+		))
+		return nil, status.Error(codes.Unauthenticated, "Authentication required")
+
+	case "overload":
+		grpc.SetTrailer(ctx, metadata.Pairs(
+			"error-code", "SERVER_OVERLOADED",
+			"error-field", "name",
+			"error-timestamp", time.Now().Format(time.RFC3339),
+		))
+		return nil, status.Error(codes.ResourceExhausted, "Server overloaded, try again later")
+
+	case "busy":
+		grpc.SetTrailer(ctx, metadata.Pairs(
+			"error-code", "TOO_MANY_REQUESTS",
+			"error-field", "name",
+			"error-timestamp", time.Now().Format(time.RFC3339),
+		))
+		return nil, status.Error(codes.ResourceExhausted, "Too many concurrent requests")
+
+	case "error":
+		grpc.SetTrailer(ctx, metadata.Pairs(
+			"error-code", "INTERNAL_ERROR",
+			"error-field", "name",
+			"error-timestamp", time.Now().Format(time.RFC3339),
+		))
+		return nil, status.Error(codes.Internal, "Internal server error occurred")
+
+	case "crash":
+		grpc.SetTrailer(ctx, metadata.Pairs(
+			"error-code", "SYSTEM_FAILURE",
+			"error-field", "name",
+			"error-timestamp", time.Now().Format(time.RFC3339),
+		))
+		return nil, status.Error(codes.Internal, "Unexpected system failure")
+
+	case "down":
+		grpc.SetTrailer(ctx, metadata.Pairs(
+			"error-code", "SERVICE_UNAVAILABLE",
+			"error-field", "name",
+			"error-timestamp", time.Now().Format(time.RFC3339),
+		))
+		return nil, status.Error(codes.Unavailable, "Service temporarily unavailable")
+
+	case "offline":
+		grpc.SetTrailer(ctx, metadata.Pairs(
+			"error-code", "MAINTENANCE_MODE",
+			"error-field", "name",
+			"error-timestamp", time.Now().Format(time.RFC3339),
+		))
+		return nil, status.Error(codes.Unavailable, "Service is offline for maintenance")
+
+	case "timeout":
+		grpc.SetTrailer(ctx, metadata.Pairs(
+			"error-code", "PROCESSING_TIMEOUT",
+			"error-field", "name",
+			"error-timestamp", time.Now().Format(time.RFC3339),
+		))
+		return nil, status.Error(codes.DeadlineExceeded, "Request processing timeout")
+
+	case "slow":
+		grpc.SetTrailer(ctx, metadata.Pairs(
+			"error-code", "OPERATION_TIMEOUT",
+			"error-field", "name",
+			"error-timestamp", time.Now().Format(time.RFC3339),
+		))
+		return nil, status.Error(codes.DeadlineExceeded, "Operation took too long")
+
+	case "cancelled":
+		grpc.SetTrailer(ctx, metadata.Pairs(
+			"error-code", "OPERATION_CANCELLED",
+			"error-field", "name",
+			"error-timestamp", time.Now().Format(time.RFC3339),
+		))
+		return nil, status.Error(codes.Canceled, "Operation was cancelled")
+
+	case "abort":
+		grpc.SetTrailer(ctx, metadata.Pairs(
+			"error-code", "OPERATION_ABORTED",
+			"error-field", "name",
+			"error-timestamp", time.Now().Format(time.RFC3339),
+		))
+		return nil, status.Error(codes.Aborted, "Operation aborted due to conflict")
+
+	case "exists":
+		grpc.SetTrailer(ctx, metadata.Pairs(
+			"error-code", "RESOURCE_EXISTS",
+			"error-field", "name",
+			"error-timestamp", time.Now().Format(time.RFC3339),
+		))
+		return nil, status.Error(codes.AlreadyExists, "Resource already exists")
+
+	case "range":
+		grpc.SetTrailer(ctx, metadata.Pairs(
+			"error-code", "VALUE_OUT_OF_RANGE",
+			"error-field", "name",
+			"error-timestamp", time.Now().Format(time.RFC3339),
+		))
+		return nil, status.Error(codes.OutOfRange, "Value out of acceptable range")
+
+	case "unimplemented":
+		grpc.SetTrailer(ctx, metadata.Pairs(
+			"error-code", "FEATURE_NOT_IMPLEMENTED",
+			"error-field", "name",
+			"error-timestamp", time.Now().Format(time.RFC3339),
+		))
+		return nil, status.Error(codes.Unimplemented, "Feature not implemented")
+
+	case "data":
+		grpc.SetTrailer(ctx, metadata.Pairs(
+			"error-code", "DATA_CORRUPTION",
+			"error-field", "name",
+			"error-timestamp", time.Now().Format(time.RFC3339),
+		))
+		return nil, status.Error(codes.DataLoss, "Data corruption detected")
+	}
+
+	// Success case
+	grpc.SetTrailer(ctx, metadata.Pairs(
+		"validation-status", "passed",
+		"processed-name", name,
+		"timestamp", time.Now().Format(time.RFC3339),
+	))
+
+	return &goodbye.GoodbyeReply{Message: fmt.Sprintf("Goodbye %s! Validation passed.", name)}, nil
+}
+
+// SayGoodbyeWithAuth demonstrates authentication/authorization errors
+func (s *goodbyeServer) SayGoodbyeWithAuth(ctx context.Context, in *goodbye.GoodbyeRequest) (*goodbye.GoodbyeReply, error) {
+	log.Printf("gRPC: Received SayGoodbyeWithAuth request: %v", in.GetName())
+
+	name := strings.TrimSpace(in.GetName())
+
+	// Auth-specific error scenarios
+	switch name {
+	case "":
+		return nil, status.Error(codes.InvalidArgument, "Username cannot be empty")
+	case "guest":
+		return nil, status.Error(codes.Unauthenticated, "Guest access requires authentication")
+	case "admin":
+		return nil, status.Error(codes.PermissionDenied, "Admin access denied")
+	case "root":
+		return nil, status.Error(codes.PermissionDenied, "Root access forbidden")
+	case "banned":
+		return nil, status.Error(codes.PermissionDenied, "User account is banned")
+	case "expired":
+		return nil, status.Error(codes.Unauthenticated, "Authentication token expired")
+	case "invalid":
+		return nil, status.Error(codes.Unauthenticated, "Invalid credentials")
+	}
+
+	return &goodbye.GoodbyeReply{Message: fmt.Sprintf("Goodbye %s! Authentication successful.", name)}, nil
 }
 
 // SayGoodbyeStream implements goodbye.FarewellServer
@@ -519,6 +917,194 @@ func (s *helloServer) handleSayHelloHTTP(w http.ResponseWriter, r *http.Request)
 	json.NewEncoder(w).Encode(resp)
 }
 
+// HTTP error response structure
+type ErrorResponse struct {
+	Error ErrorDetails `json:"error"`
+}
+
+type ErrorDetails struct {
+	Code      string                 `json:"code"`
+	Message   string                 `json:"message"`
+	Details   map[string]interface{} `json:"details"`
+	GrpcCode  int                    `json:"grpc_code"`
+	Timestamp string                 `json:"timestamp"`
+}
+
+// Helper function to convert gRPC status to HTTP status code
+func grpcToHTTPStatus(code codes.Code) int {
+	switch code {
+	case codes.InvalidArgument:
+		return http.StatusBadRequest
+	case codes.NotFound:
+		return http.StatusNotFound
+	case codes.PermissionDenied:
+		return http.StatusForbidden
+	case codes.Unauthenticated:
+		return http.StatusUnauthorized
+	case codes.ResourceExhausted:
+		return http.StatusTooManyRequests
+	case codes.Internal:
+		return http.StatusInternalServerError
+	case codes.Unavailable:
+		return http.StatusServiceUnavailable
+	case codes.DeadlineExceeded:
+		return http.StatusRequestTimeout
+	case codes.Canceled:
+		return 499 // Client Closed Request
+	case codes.Aborted:
+		return http.StatusConflict
+	case codes.AlreadyExists:
+		return http.StatusConflict
+	case codes.OutOfRange:
+		return http.StatusBadRequest
+	case codes.Unimplemented:
+		return http.StatusNotImplemented
+	case codes.DataLoss:
+		return http.StatusInternalServerError
+	default:
+		return http.StatusInternalServerError
+	}
+}
+
+// Helper function to handle gRPC errors in HTTP responses
+func handleGRPCError(w http.ResponseWriter, err error) {
+	if err == nil {
+		return
+	}
+
+	st, ok := status.FromError(err)
+	if !ok {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	httpStatus := grpcToHTTPStatus(st.Code())
+
+	errorResp := ErrorResponse{
+		Error: ErrorDetails{
+			Code:      st.Code().String(),
+			Message:   st.Message(),
+			GrpcCode:  int(st.Code()),
+			Timestamp: time.Now().Format(time.RFC3339),
+			Details: map[string]interface{}{
+				"grpc_status": st.Code().String(),
+			},
+		},
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(httpStatus)
+	json.NewEncoder(w).Encode(errorResp)
+}
+
+func (s *helloServer) handleSayHelloWithValidationHTTP(w http.ResponseWriter, r *http.Request) {
+	log.Printf("HTTP: Received SayHelloWithValidation request")
+
+	// Set CORS headers
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	var req HelloRequest
+	var name string
+
+	if r.Method == "GET" {
+		name = r.URL.Query().Get("name")
+	} else if r.Method == "POST" {
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid JSON", http.StatusBadRequest)
+			return
+		}
+		name = req.Name
+	} else {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	log.Printf("HTTP: Processing hello validation request for: %s", name)
+
+	// Create gRPC request and call the gRPC method
+	grpcReq := &hello.HelloRequest{Name: name}
+	grpcResp, err := s.SayHelloWithValidation(context.Background(), grpcReq)
+	if err != nil {
+		handleGRPCError(w, err)
+		return
+	}
+
+	// Convert to HTTP response
+	resp := HelloResponse{Message: grpcResp.Message}
+
+	// Add custom headers
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Server-Name", "grpc-sample-server")
+	w.Header().Set("X-Method", "SayHelloWithValidation")
+	w.Header().Set("X-Protocol", "HTTP")
+	w.Header().Set("X-Timestamp", time.Now().Format(time.RFC3339))
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(resp)
+}
+
+func (s *helloServer) handleSayHelloWithAuthHTTP(w http.ResponseWriter, r *http.Request) {
+	log.Printf("HTTP: Received SayHelloWithAuth request")
+
+	// Set CORS headers
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	var req HelloRequest
+	var name string
+
+	if r.Method == "GET" {
+		name = r.URL.Query().Get("name")
+	} else if r.Method == "POST" {
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid JSON", http.StatusBadRequest)
+			return
+		}
+		name = req.Name
+	} else {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	log.Printf("HTTP: Processing hello auth request for: %s", name)
+
+	// Create gRPC request and call the gRPC method
+	grpcReq := &hello.HelloRequest{Name: name}
+	grpcResp, err := s.SayHelloWithAuth(context.Background(), grpcReq)
+	if err != nil {
+		handleGRPCError(w, err)
+		return
+	}
+
+	// Convert to HTTP response
+	resp := HelloResponse{Message: grpcResp.Message}
+
+	// Add custom headers
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Server-Name", "grpc-sample-server")
+	w.Header().Set("X-Method", "SayHelloWithAuth")
+	w.Header().Set("X-Protocol", "HTTP")
+	w.Header().Set("X-Timestamp", time.Now().Format(time.RFC3339))
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(resp)
+}
+
 func (s *goodbyeServer) handleSayGoodbyeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Printf("HTTP: Received SayGoodbye request")
 
@@ -573,6 +1159,114 @@ func (s *goodbyeServer) handleSayGoodbyeHTTP(w http.ResponseWriter, r *http.Requ
 	// Add custom headers
 	w.Header().Set("X-Server-Name", "grpc-sample-server")
 	w.Header().Set("X-Method", "SayGoodbye")
+	w.Header().Set("X-Protocol", "HTTP")
+	w.Header().Set("X-Timestamp", time.Now().Format(time.RFC3339))
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(resp)
+}
+
+func (s *goodbyeServer) handleSayGoodbyeWithValidationHTTP(w http.ResponseWriter, r *http.Request) {
+	log.Printf("HTTP: Received SayGoodbyeWithValidation request")
+
+	// Set CORS headers
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	var req GoodbyeRequest
+	var name string
+
+	if r.Method == "GET" {
+		name = r.URL.Query().Get("name")
+	} else if r.Method == "POST" {
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid JSON", http.StatusBadRequest)
+			return
+		}
+		name = req.Name
+	} else {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	log.Printf("HTTP: Processing goodbye validation request for: %s", name)
+
+	// Create gRPC request and call the gRPC method
+	grpcReq := &goodbye.GoodbyeRequest{Name: name}
+	grpcResp, err := s.SayGoodbyeWithValidation(context.Background(), grpcReq)
+	if err != nil {
+		handleGRPCError(w, err)
+		return
+	}
+
+	// Convert to HTTP response
+	resp := GoodbyeResponse{Message: grpcResp.Message}
+
+	// Add custom headers
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Server-Name", "grpc-sample-server")
+	w.Header().Set("X-Method", "SayGoodbyeWithValidation")
+	w.Header().Set("X-Protocol", "HTTP")
+	w.Header().Set("X-Timestamp", time.Now().Format(time.RFC3339))
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(resp)
+}
+
+func (s *goodbyeServer) handleSayGoodbyeWithAuthHTTP(w http.ResponseWriter, r *http.Request) {
+	log.Printf("HTTP: Received SayGoodbyeWithAuth request")
+
+	// Set CORS headers
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	var req GoodbyeRequest
+	var name string
+
+	if r.Method == "GET" {
+		name = r.URL.Query().Get("name")
+	} else if r.Method == "POST" {
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid JSON", http.StatusBadRequest)
+			return
+		}
+		name = req.Name
+	} else {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	log.Printf("HTTP: Processing goodbye auth request for: %s", name)
+
+	// Create gRPC request and call the gRPC method
+	grpcReq := &goodbye.GoodbyeRequest{Name: name}
+	grpcResp, err := s.SayGoodbyeWithAuth(context.Background(), grpcReq)
+	if err != nil {
+		handleGRPCError(w, err)
+		return
+	}
+
+	// Convert to HTTP response
+	resp := GoodbyeResponse{Message: grpcResp.Message}
+
+	// Add custom headers
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Server-Name", "grpc-sample-server")
+	w.Header().Set("X-Method", "SayGoodbyeWithAuth")
 	w.Header().Set("X-Protocol", "HTTP")
 	w.Header().Set("X-Timestamp", time.Now().Format(time.RFC3339))
 
@@ -638,11 +1332,43 @@ func handleAPIDoc(w http.ResponseWriter, r *http.Request) {
 						},
 					},
 					{
+						"path":        "/api/hello/validate",
+						"methods":     []string{"GET", "POST"},
+						"description": "Say hello with comprehensive validation (demonstrates error handling)",
+						"parameters": map[string]string{
+							"name": "Name to validate - try: admin, unknown, guest, error, timeout, etc. for different errors",
+						},
+					},
+					{
+						"path":        "/api/hello/auth",
+						"methods":     []string{"GET", "POST"},
+						"description": "Say hello with authentication/authorization checks",
+						"parameters": map[string]string{
+							"name": "Username to authenticate - try: guest, admin, root, banned, expired, invalid for different auth errors",
+						},
+					},
+					{
 						"path":        "/api/goodbye",
 						"methods":     []string{"GET", "POST"},
 						"description": "Say goodbye to someone",
 						"parameters": map[string]string{
 							"name": "Name of the person to bid farewell (query param for GET, JSON body for POST)",
+						},
+					},
+					{
+						"path":        "/api/goodbye/validate",
+						"methods":     []string{"GET", "POST"},
+						"description": "Say goodbye with comprehensive validation (demonstrates error handling)",
+						"parameters": map[string]string{
+							"name": "Name to validate - try: admin, unknown, guest, error, timeout, etc. for different errors",
+						},
+					},
+					{
+						"path":        "/api/goodbye/auth",
+						"methods":     []string{"GET", "POST"},
+						"description": "Say goodbye with authentication/authorization checks",
+						"parameters": map[string]string{
+							"name": "Username to authenticate - try: guest, admin, root, banned, expired, invalid for different auth errors",
 						},
 					},
 					{
@@ -660,15 +1386,24 @@ func handleAPIDoc(w http.ResponseWriter, r *http.Request) {
 		},
 		"examples": map[string]interface{}{
 			"grpc": map[string]string{
-				"list_services": "grpcurl -plaintext localhost:50051 list",
-				"say_hello":     "grpcurl -plaintext -d '{\"name\":\"World\"}' localhost:50051 grpc.hello.Greeter/SayHello",
-				"say_goodbye":   "grpcurl -plaintext -d '{\"name\":\"Friend\"}' localhost:50051 grpc.goodbye.Farewell/SayGoodbye",
+				"list_services":          "grpcurl -plaintext localhost:50051 list",
+				"say_hello":              "grpcurl -plaintext -d '{\"name\":\"World\"}' localhost:50051 grpc.hello.Greeter/SayHello",
+				"say_hello_validation":   "grpcurl -plaintext -d '{\"name\":\"admin\"}' localhost:50051 grpc.hello.Greeter/SayHelloWithValidation",
+				"say_hello_auth":         "grpcurl -plaintext -d '{\"name\":\"guest\"}' localhost:50051 grpc.hello.Greeter/SayHelloWithAuth",
+				"say_goodbye":            "grpcurl -plaintext -d '{\"name\":\"Friend\"}' localhost:50051 grpc.goodbye.Farewell/SayGoodbye",
+				"say_goodbye_validation": "grpcurl -plaintext -d '{\"name\":\"unknown\"}' localhost:50051 grpc.goodbye.Farewell/SayGoodbyeWithValidation",
+				"say_goodbye_auth":       "grpcurl -plaintext -d '{\"name\":\"banned\"}' localhost:50051 grpc.goodbye.Farewell/SayGoodbyeWithAuth",
 			},
 			"http": map[string]string{
-				"say_hello_get":  "curl 'http://localhost:50051/api/hello?name=World'",
-				"say_hello_post": "curl -X POST -H 'Content-Type: application/json' -d '{\"name\":\"World\"}' http://localhost:50051/api/hello",
-				"say_goodbye":    "curl 'http://localhost:50051/api/goodbye?name=Friend'",
-				"health_check":   "curl http://localhost:50051/health",
+				"say_hello_get":          "curl 'http://localhost:50051/api/hello?name=World'",
+				"say_hello_post":         "curl -X POST -H 'Content-Type: application/json' -d '{\"name\":\"World\"}' http://localhost:50051/api/hello",
+				"say_hello_validation":   "curl 'http://localhost:50051/api/hello/validate?name=admin'",
+				"say_hello_auth":         "curl 'http://localhost:50051/api/hello/auth?name=guest'",
+				"say_goodbye":            "curl 'http://localhost:50051/api/goodbye?name=Friend'",
+				"say_goodbye_validation": "curl 'http://localhost:50051/api/goodbye/validate?name=unknown'",
+				"say_goodbye_auth":       "curl 'http://localhost:50051/api/goodbye/auth?name=banned'",
+				"health_check":           "curl http://localhost:50051/health",
+				"api_documentation":      "curl http://localhost:50051/api/doc",
 			},
 		},
 	}
@@ -697,7 +1432,11 @@ func setupHTTPRouter(helloSrv *helloServer, goodbyeSrv *goodbyeServer) http.Hand
 
 	// API routes
 	router.HandleFunc("/api/hello", helloSrv.handleSayHelloHTTP).Methods("GET", "POST", "OPTIONS")
+	router.HandleFunc("/api/hello/validate", helloSrv.handleSayHelloWithValidationHTTP).Methods("GET", "POST", "OPTIONS")
+	router.HandleFunc("/api/hello/auth", helloSrv.handleSayHelloWithAuthHTTP).Methods("GET", "POST", "OPTIONS")
 	router.HandleFunc("/api/goodbye", goodbyeSrv.handleSayGoodbyeHTTP).Methods("GET", "POST", "OPTIONS")
+	router.HandleFunc("/api/goodbye/validate", goodbyeSrv.handleSayGoodbyeWithValidationHTTP).Methods("GET", "POST", "OPTIONS")
+	router.HandleFunc("/api/goodbye/auth", goodbyeSrv.handleSayGoodbyeWithAuthHTTP).Methods("GET", "POST", "OPTIONS")
 
 	// Utility routes
 	router.HandleFunc("/health", handleHealthCheck).Methods("GET")

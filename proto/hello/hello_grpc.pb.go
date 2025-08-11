@@ -19,10 +19,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Greeter_SayHello_FullMethodName              = "/grpc.hello.Greeter/SayHello"
-	Greeter_SayHelloStream_FullMethodName        = "/grpc.hello.Greeter/SayHelloStream"
-	Greeter_SayHelloClientStream_FullMethodName  = "/grpc.hello.Greeter/SayHelloClientStream"
-	Greeter_SayHelloBidirectional_FullMethodName = "/grpc.hello.Greeter/SayHelloBidirectional"
+	Greeter_SayHello_FullMethodName               = "/grpc.hello.Greeter/SayHello"
+	Greeter_SayHelloStream_FullMethodName         = "/grpc.hello.Greeter/SayHelloStream"
+	Greeter_SayHelloClientStream_FullMethodName   = "/grpc.hello.Greeter/SayHelloClientStream"
+	Greeter_SayHelloBidirectional_FullMethodName  = "/grpc.hello.Greeter/SayHelloBidirectional"
+	Greeter_SayHelloWithValidation_FullMethodName = "/grpc.hello.Greeter/SayHelloWithValidation"
+	Greeter_SayHelloWithAuth_FullMethodName       = "/grpc.hello.Greeter/SayHelloWithAuth"
 )
 
 // GreeterClient is the client API for Greeter service.
@@ -39,6 +41,10 @@ type GreeterClient interface {
 	SayHelloClientStream(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[HelloRequest, HelloReply], error)
 	// Bidirectional streaming - client sends names, server responds to each
 	SayHelloBidirectional(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[HelloRequest, HelloReply], error)
+	// Demonstrates input validation errors with comprehensive error scenarios
+	SayHelloWithValidation(ctx context.Context, in *HelloRequest, opts ...grpc.CallOption) (*HelloReply, error)
+	// Demonstrates authentication/authorization errors
+	SayHelloWithAuth(ctx context.Context, in *HelloRequest, opts ...grpc.CallOption) (*HelloReply, error)
 }
 
 type greeterClient struct {
@@ -104,6 +110,26 @@ func (c *greeterClient) SayHelloBidirectional(ctx context.Context, opts ...grpc.
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Greeter_SayHelloBidirectionalClient = grpc.BidiStreamingClient[HelloRequest, HelloReply]
 
+func (c *greeterClient) SayHelloWithValidation(ctx context.Context, in *HelloRequest, opts ...grpc.CallOption) (*HelloReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(HelloReply)
+	err := c.cc.Invoke(ctx, Greeter_SayHelloWithValidation_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *greeterClient) SayHelloWithAuth(ctx context.Context, in *HelloRequest, opts ...grpc.CallOption) (*HelloReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(HelloReply)
+	err := c.cc.Invoke(ctx, Greeter_SayHelloWithAuth_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GreeterServer is the server API for Greeter service.
 // All implementations must embed UnimplementedGreeterServer
 // for forward compatibility.
@@ -118,6 +144,10 @@ type GreeterServer interface {
 	SayHelloClientStream(grpc.ClientStreamingServer[HelloRequest, HelloReply]) error
 	// Bidirectional streaming - client sends names, server responds to each
 	SayHelloBidirectional(grpc.BidiStreamingServer[HelloRequest, HelloReply]) error
+	// Demonstrates input validation errors with comprehensive error scenarios
+	SayHelloWithValidation(context.Context, *HelloRequest) (*HelloReply, error)
+	// Demonstrates authentication/authorization errors
+	SayHelloWithAuth(context.Context, *HelloRequest) (*HelloReply, error)
 	mustEmbedUnimplementedGreeterServer()
 }
 
@@ -139,6 +169,12 @@ func (UnimplementedGreeterServer) SayHelloClientStream(grpc.ClientStreamingServe
 }
 func (UnimplementedGreeterServer) SayHelloBidirectional(grpc.BidiStreamingServer[HelloRequest, HelloReply]) error {
 	return status.Errorf(codes.Unimplemented, "method SayHelloBidirectional not implemented")
+}
+func (UnimplementedGreeterServer) SayHelloWithValidation(context.Context, *HelloRequest) (*HelloReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SayHelloWithValidation not implemented")
+}
+func (UnimplementedGreeterServer) SayHelloWithAuth(context.Context, *HelloRequest) (*HelloReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SayHelloWithAuth not implemented")
 }
 func (UnimplementedGreeterServer) mustEmbedUnimplementedGreeterServer() {}
 func (UnimplementedGreeterServer) testEmbeddedByValue()                 {}
@@ -204,6 +240,42 @@ func _Greeter_SayHelloBidirectional_Handler(srv interface{}, stream grpc.ServerS
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Greeter_SayHelloBidirectionalServer = grpc.BidiStreamingServer[HelloRequest, HelloReply]
 
+func _Greeter_SayHelloWithValidation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(HelloRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GreeterServer).SayHelloWithValidation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Greeter_SayHelloWithValidation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GreeterServer).SayHelloWithValidation(ctx, req.(*HelloRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Greeter_SayHelloWithAuth_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(HelloRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GreeterServer).SayHelloWithAuth(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Greeter_SayHelloWithAuth_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GreeterServer).SayHelloWithAuth(ctx, req.(*HelloRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Greeter_ServiceDesc is the grpc.ServiceDesc for Greeter service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -214,6 +286,14 @@ var Greeter_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SayHello",
 			Handler:    _Greeter_SayHello_Handler,
+		},
+		{
+			MethodName: "SayHelloWithValidation",
+			Handler:    _Greeter_SayHelloWithValidation_Handler,
+		},
+		{
+			MethodName: "SayHelloWithAuth",
+			Handler:    _Greeter_SayHelloWithAuth_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

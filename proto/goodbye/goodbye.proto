@@ -17,6 +17,12 @@ service Farewell {
   
   // Bidirectional streaming - client sends names, server responds to each
   rpc SayGoodbyeBidirectional (stream GoodbyeRequest) returns (stream GoodbyeReply) {}
+  
+  // Demonstrates input validation errors with comprehensive error scenarios
+  rpc SayGoodbyeWithValidation (GoodbyeRequest) returns (GoodbyeReply) {}
+  
+  // Demonstrates authentication/authorization errors
+  rpc SayGoodbyeWithAuth (GoodbyeRequest) returns (GoodbyeReply) {}
 }
 
 // The request message containing the user's name.
